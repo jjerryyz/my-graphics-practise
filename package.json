@@ -1,0 +1,16 @@
+{
+  "name": "my-graphics-practise",
+  "version": "1.0.0",
+  "description": "",
+  "main": "particle/index.html",
+  "scripts": {
+    "start": "serve"
+  },
+  "dependencies": {
+    "serve": "11.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "1.18.4"
+  },
+  "keywords": []
+}
