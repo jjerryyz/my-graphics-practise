@@ -2286,6 +2286,11 @@ cssesc@^3.0.0:
   resolved "https://registry.yarnpkg.com/cssesc/-/cssesc-3.0.0.tgz#37741919903b868565e1c09ea747445cd18983ee"
   integrity sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==
 
+cubehelix@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/cubehelix/-/cubehelix-1.0.4.tgz#7b6ee07b7397b76e108f74a1b4e63f069a670427"
+  integrity sha512-KKtmJkF4eW1P7/gRXhGiI2fs9gxW90TkIZ8E0hMdP4PbQ0luZuXHNTyBrAOg7Qzxt0LZa2mK4bOSBFojRLczhg==
+
 cyclist@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/cyclist/-/cyclist-1.0.1.tgz#596e9698fd0c80e12038c2b82d6eb1b35b6224d9"
