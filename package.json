@@ -2,7 +2,7 @@
   "name": "my-graphics-practise",
   "version": "1.0.0",
   "description": "",
-  "main": "particle/index.html",
+  "main": "",
   "private": true,
   "scripts": {
     "dev": "cross-env NODE_ENV=development webpack serve",

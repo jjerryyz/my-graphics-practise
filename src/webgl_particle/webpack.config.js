@@ -4,7 +4,7 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 module.exports = {
   mode: "development",
-  entry: { index: "./src/particle/index.js" },
+  entry: { index: "./index.js" },
   devtool: "inline-source-map",
   devServer: {
     contentBase: path.resolve(__dirname, "dist"),
@@ -31,7 +31,7 @@ module.exports = {
   plugins: [
     new CleanWebpackPlugin(),
     new CopyPlugin({
-      patterns: ["src/particle/index.html"],
+      patterns: ["./index.html"],
     }),
   ],
 };

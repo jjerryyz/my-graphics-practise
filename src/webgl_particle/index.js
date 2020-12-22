@@ -18,7 +18,10 @@ gl.linkProgram(program);
 gl.useProgram(program);
 
 // 将定义好的数据写入 WebGL 的缓冲区
-const position = new Float32Array([-1, 1, 0, -1, 1, -1]);
+const position = new Float32Array([
+  -1, 1, 
+  0, -1, 
+  1, -1]);
 const bufferId = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
 gl.bufferData(gl.ARRAY_BUFFER, position, gl.STATIC_DRAW);

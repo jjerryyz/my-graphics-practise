@@ -17,7 +17,8 @@ void main() {
   float scale = u_scale * p * (2.0 - p);
   // u_dir 是单位向量，2.0 表示最大移动距离为 2， p*p 为缓动函数
   vec2 offset = 2.0 * u_dir * p * p;
-  // 矩阵在 glsl 中在写法上 行对应于 数学中的列
+  // 矩阵可以以行主序，也可以以列主序，在glsl中默认是以列主序
+  // 因此看起来是正常数学公式中矩阵的转置
   mat3 translateMatrix =
       mat3(
         1.0, 0.0, 0.0, 
@@ -33,8 +34,23 @@ void main() {
         scale, 0.0, 0.0, 
         0.0, scale, 0.0, 
         0.0, 0.0, 1.0);
+  mat3 skewMatrix = 
+      mat3(
+        1, -tan(rad), 0.0,
+        tan(rad), 1, 0.0,
+        0.0, 0.0, 1.0);
   gl_PointSize = 1.0;
-  vec3 pos = translateMatrix * rotateMatrix * scaleMatrix * vec3(position, 1.0);
+  // vec3 pos = translateMatrix * rotateMatrix * scaleMatrix * vec3(position, 1.0);
+
+  // Q1: 交换 translateMatrix/rotateMatrix/scaleMatrix 顺序对结果的影响
+  // translateMatrix 和 rotateMatrix 交换对结果影响最大
+  // vec3 pos = rotateMatrix * translateMatrix * scaleMatrix * vec3(position, 1.0);
+  // vec3 pos = scaleMatrix * rotateMatrix * translateMatrix * vec3(position, 1.0);
+  // vec3 pos = scaleMatrix * translateMatrix * rotateMatrix * vec3(position, 1.0);
+
+  // Q2: 加入扭曲效果
+  vec3 pos = skewMatrix * translateMatrix * rotateMatrix * scaleMatrix * vec3(position, 1.0);
+
   gl_Position = vec4(pos, 1.0);
   vP = p;
 }
