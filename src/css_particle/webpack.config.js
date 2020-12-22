@@ -1,14 +1,9 @@
 const path = require("path");
-const CopyPlugin = require("copy-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 module.exports = {
-  mode: "development",
-  entry: { index: "./src/particle/index.js" },
-  devtool: "inline-source-map",
-  devServer: {
-    contentBase: path.resolve(__dirname, "dist"),
-    port: 9000,
+  entry: {
+    index: "./index.js",
   },
   output: {
     filename: "[name].js",
@@ -22,16 +17,9 @@ module.exports = {
         exclude: /node_modules/,
         options: { presets: [["@babel/preset-env", { targets: "defaults" }]] },
       },
-      {
-        test: /\.glsl$/,
-        loader: "raw-loader",
-      },
     ],
   },
   plugins: [
-    new CleanWebpackPlugin(),
-    new CopyPlugin({
-      patterns: ["src/particle/index.html"],
-    }),
+    new CleanWebpackPlugin()
   ],
 };

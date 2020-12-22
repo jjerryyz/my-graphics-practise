@@ -1,4 +1,4 @@
-import {multiply} from '../common/lib/math/functions/mat3fun.js';
+import {multiply} from '../common/lib/math/functions/Mat3Func.js';
 
 const rad = Math.PI / 6;
 const a = [ 
@@ -18,4 +18,5 @@ const a = [
 
 const res = [a, b, c].reduce((a,b) => multiply([], b, a))
 
+// https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function/matrix()
 console.log('res', res);
