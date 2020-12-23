@@ -6,8 +6,10 @@ const renderer = new GlRenderer(canvas);
 
 const program = renderer.compileSync(fragment, vertex);
 renderer.useProgram(program);
+renderer.uniforms.center = [0.367, 0.303];
+renderer.uniforms.scale = 1;
+renderer.uniforms.iterations = 256;
 
-renderer.uniforms.rows = 10; // 一行显示 64 个网格
 renderer.setMeshData([ // 设置顶点数据
   {
     positions: [
@@ -32,3 +34,12 @@ renderer.setMeshData([ // 设置顶点数据
 ]);
 
 renderer.render();
+
+function update() {
+  const factor = Math.max(0.1, Math.log(renderer.uniforms.scale));
+  renderer.uniforms.scale = (renderer.uniforms.scale += factor) % 10000;
+  renderer.uniforms.iterations = factor * 500;
+  requestAnimationFrame(update);
+  // setTimeout(update, 500);
+}
+setTimeout(update, 500);
