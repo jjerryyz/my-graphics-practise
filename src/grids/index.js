@@ -32,3 +32,6 @@ renderer.setMeshData([ // 设置顶点数据
 ]);
 
 renderer.render();
+requestAnimationFrame(()=>{
+  renderer.render();
+})
