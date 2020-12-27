@@ -1,5 +1,5 @@
 // Author: jerry
-// Title: noisy-random
+// Title: random-1d
 
 #ifdef GL_ES
 precision mediump float;

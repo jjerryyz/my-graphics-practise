@@ -1,5 +1,5 @@
 // Author: jerry
-// Title: gradient-noisy-random-2d
+// Title: noisy-gradient-random-2d
 
 #ifdef GL_ES
 precision mediump float;
