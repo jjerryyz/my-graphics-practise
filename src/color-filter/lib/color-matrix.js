@@ -63,3 +63,94 @@ export function grayscale(p) {
     0, 0, 0, 1, 0,
   ];
 }
+
+export function channel({r=1, g=1, b=1}) {
+  return [
+    r, 0, 0, 0, 0,
+    0, g, 0, 0, 0,
+    0, 0, b, 0, 0,
+    0, 0, 0, 1, 0
+  ];
+}
+
+// 调亮度 0 = 全黑，1 = 原色, >1 增亮
+export function brightness(p) {
+  return [
+    p, 0, 0, 0, 0,
+    0, p, 0, 0, 0,
+    0, 0, p, 0, 0,
+    0, 0, 0, 1, 0,
+  ];
+}
+
+// 饱和度，与grayscale正好相反
+// p = 0 完全灰度化，p = 1 原色，p > 1 增强饱和度
+export function saturate(p) {
+  // p = clamp(0, 1, p);
+  const r = 0.212 * (1 - p);
+  const g = 0.714 * (1 - p);
+  const b = 0.074 * (1 - p);
+  return [
+    r + p, g, b, 0, 0,
+    r, g + p, b, 0, 0,
+    r, g, b + p, 0, 0,
+    0, 0, 0, 1, 0,
+  ];
+}
+
+// 对比度, p = 1 原色， p < 1 减弱对比度，p > 1 增强对比度
+export function contrast(p) {
+  const d = 0.5 * (1 - p);
+  return [
+    p, 0, 0, 0, d,
+    0, p, 0, 0, d,
+    0, 0, p, 0, d,
+    0, 0, 0, 1, 0,
+  ];
+}
+
+// 反色， p = 0 原色， p = 1 完全反色
+export function invert(p) {
+  const d = 1 - 2 * p;
+  return [
+    d, 0, 0, 0, p,
+    0, d, 0, 0, p,
+    0, 0, d, 0, p,
+    0, 0, 0, 1, 0,
+  ];
+}
+
+export function sepia(p) {
+  return [
+    1 - 0.607 * p, 0.769 * p, 0.189 * p, 0, 0,
+    0.349 * p, 1 - 0.314 * p, 0.168 * p, 0, 0,
+    0.272 * p, 0.534 * p, 1 - 0.869 * p, 0, 0,
+    0, 0, 0, 1, 0,
+  ];
+}
+
+// 透明度，p = 0 全透明，p = 1 原色
+export function opacity(p) {
+  return [
+    1, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, p, 0,
+  ];
+}
+
+// 色相旋转，将色调沿极坐标转过deg角度
+export function hueRotate(deg) {
+  const rotation = deg / 180 * Math.PI;
+  const cos = Math.cos(rotation),
+    sin = Math.sin(rotation),
+    lumR = 0.213,
+    lumG = 0.715,
+    lumB = 0.072;
+  return [
+    lumR + cos * (1 - lumR) + sin * (-lumR), lumG + cos * (-lumG) + sin * (-lumG), lumB + cos * (-lumB) + sin * (1 - lumB), 0, 0,
+    lumR + cos * (-lumR) + sin * (0.143), lumG + cos * (1 - lumG) + sin * (0.140), lumB + cos * (-lumB) + sin * (-0.283), 0, 0,
+    lumR + cos * (-lumR) + sin * (-(1 - lumR)), lumG + cos * (-lumG) + sin * (lumG), lumB + cos * (1 - lumB) + sin * (lumB), 0, 0,
+    0, 0, 0, 1, 0,
+  ];
+}
