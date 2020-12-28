@@ -5,9 +5,12 @@ precision highp float;
 varying vec2 vUv;
 uniform sampler2D tMap;
 uniform int axis;
+uniform float filter;
 
 void main() {
   vec4 color = texture2D(tMap, vUv);
+  float brightness = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
+  brightness = step(filter, brightness);
 
   // 高斯矩阵的权重值
   float weight[5];

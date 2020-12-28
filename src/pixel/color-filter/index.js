@@ -1,11 +1,11 @@
-import { getImageData, traverse, gaussianBlur } from "./lib/utils.js";
+import { getImageData, traverse, gaussianBlur } from "../lib/utils.js";
 import {
   transformColor,
   grayscale,
   channel,
   brightness,
   saturate,
-} from "./lib/color-matrix.js";
+} from "../lib/color-matrix.js";
 
 function loadImage(src) {
   const img = new Image();
