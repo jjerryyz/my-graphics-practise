@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blocks</title>
+    <style>
+      .container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        width: 300px;
+      }
+      .block {
+        width: 100px;
+        height: 100px;
+        position: absolute;
+        top: 100px;
+        left: 100px;
+        background: blue;
+        flex-shrink: 0;
+        transform-origin: 50% 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="block"></div>
+    </div>
+    <script type="module">
+      import Animate from "./lib/animate.js";
+      import Bezier from "./lib/bezier.js";
+      const block = document.querySelector(".block");
+      const T = 3000;
+      const animate = new Animate({
+        duration: T,
+        iterations: 1,
+        easing: Bezier(0.5, -1.5, 0.5, 2.5),
+      });
+      animate.animate(
+        { el: block, start: 100, end: 400 },
+        ({ target, frameIndex, timing }) => {
+          const { el, start, end } = target;
+          const p = timing.p;
+          const left = start * (1 - p) + end * p;
+          el.style.left = `${left}px`;
+        }
+      );
+    </script>
+  </body>
+</html>

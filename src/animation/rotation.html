@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blocks</title>
+    <style>
+      .container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        width: 300px;
+      }
+      .block {
+        width: 100px;
+        height: 100px;
+        margin: 20px;
+        flex-shrink: 0;
+        transform-origin: 50% 50%;
+      }
+      .block:nth-child(1) {
+        background: red;
+      }
+      .block:nth-child(2) {
+        background: blue;
+      }
+      .block:nth-child(3) {
+        background: green;
+      }
+      .block:nth-child(4) {
+        background: orange;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="block"></div>
+      <div class="block"></div>
+      <div class="block"></div>
+      <div class="block"></div>
+    </div>
+    <script type="module">
+      import Animate from "./lib/animate.js";
+      const block = document.querySelectorAll(".block");
+      const T = 2000;
+      const animate = new Animate({
+        duration: T,
+        iterations: 1,
+        easing: p => p **2 // 匀加速运动
+        // easing: (p) => p * (2 - p), // 匀减速运动
+        // easing: p => p * p * (3.0 - 2.0 * p) // 类似 smoothstep 效果
+      });
+      (async function () {
+        let i = 0;
+        while (true) {
+          await animate.animate(
+            block[i++ % 4],
+            ({ target, frameIndex, timing }) => {
+              const angle = timing.p * 360;
+              target.style.transform = `rotate(${angle}deg)`;
+            }
+          );
+        }
+      })();
+    </script>
+  </body>
+</html>
