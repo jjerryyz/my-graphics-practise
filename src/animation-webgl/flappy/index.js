@@ -1,6 +1,6 @@
 import vertex from "./vertex.glsl";
 import fragment from "./fragment.glsl";
-import GlRenderer from "../common/lib/gl-renderer.js";
+import GlRenderer from "../../common/lib/gl-renderer.js";
 const canvas = document.querySelector("canvas");
 const renderer = new GlRenderer(canvas);
 const textureURL = 'https://p.ssl.qhimg.com/t01f265b6b6479fffc4.png';
