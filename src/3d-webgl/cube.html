@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cube</title>
+  </head>
+  <body>
+    <script src="../common/lib/gl-renderer.js"></script>
+    <canvas width="500" height="500"></canvas>
+    <script type="module">
+      const vertex = `
+          attribute vec3 a_vertexPosition;
+          attribute vec4 color;
+
+          varying vec4 vColor;
+
+          void main() {
+            gl_PointSize = 1.0;
+            vColor = color;
+            gl_Position = vec4(a_vertexPosition, 1.0);
+          }
+        `;
+
+      const fragment = `
+          precision mediump float;
+
+          varying vec4 vColor;
+          
+          void main() {
+            gl_FragColor = vColor;
+          }
+      `;
+
+      import { cube } from "./util.js";
+
+      const geometry = cube(1.0, [
+        [1, 0, 0, 1],
+        [0, 0.5, 0, 1],
+        [0, 0, 1, 1],
+      ]);
+
+      const canvas = document.querySelector("canvas");
+      const renderer = new GlRenderer(canvas, {
+        depth: true,
+      });
+      const program = renderer.compileSync(fragment, vertex);
+      renderer.useProgram(program);
+
+      renderer.setMeshData([
+        {
+          positions: geometry.positions,
+          attributes: {
+            color: geometry.color,
+          },
+          cells: geometry.cells,
+        },
+      ]);
+
+      renderer.render();
+    </script>
+  </body>
+</html>

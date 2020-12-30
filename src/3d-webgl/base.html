@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Base</title>
+  </head>
+  <body>
+    <script src="../common/lib/gl-renderer.js"></script>
+    <canvas width="500" height="500" />
+    <script type="module">
+      const vertex = `
+          attribute vec2 a_vertexPosition;
+          attribute vec4 color;
+
+          varying vec4 vColor;
+
+          void main() {
+            gl_PointSize = 1.0;
+            vColor = color;
+            gl_Position = vec4(a_vertexPosition, 1.0, 1.0);
+          }
+        `;
+
+      const fragment = `
+          precision mediump float;
+
+          varying vec4 vColor;
+          
+          void main() {
+            gl_FragColor = vColor;
+          }
+      `;
+
+      const canvas = document.querySelector("canvas");
+      const renderer = new GlRenderer(canvas);
+      const program = renderer.compileSync(fragment, vertex);
+      renderer.useProgram(program);
+
+      renderer.setMeshData([
+        // 设置顶点数据
+        {
+          positions: [
+            [-0.5, -0.5],
+            [-0.5, 0.5],
+            [0.5, 0.5],
+            [0.5, -0.5],
+          ],
+          attributes: {
+            color: [
+              [1, 0, 0, 1],
+              [1, 0, 0, 1],
+              [1, 0, 0, 1],
+              [1, 0, 0, 1],
+            ],
+          },
+          // 利用 cells: [(0, 1, 2), (2, 0, 3)]，我们就能将这个矩形画布剖分成两个三角形，这两个三角形的顶点索引分别是 (0, 1, 2) 和 (2, 0, 3)
+          cells: [
+            // 顶点索引，每三个构成一个 三角形
+            [0, 1, 2],
+            [2, 0, 3],
+          ],
+        },
+      ]);
+
+      renderer.render();
+    </script>
+  </body>
+</html>
