@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transition Animation</title>
+  </head>
+  <body>
+    <script src="../common/lib/gl-renderer.js"></script>
+    <canvas class="glslCanvas" width="500" height="500"></canvas>
+    <script type="module">
+      const vertex = `
+        attribute vec2 a_vertexPosition;
+        attribute vec2 uv;
+
+        varying vec2 vUv;
+        uniform vec4 fromTo;
+        uniform float u_time;
+
+        // 在shader中实现计算缓动函数，由于每个顶点都计算一次，比起在 js 中运算是更消耗性能的
+        float easing(float p) {
+          // return smoothstep(0.0, 1.0, p);
+          // return clamp(p * p, 0.0, 1.0);
+          p = p * (2.0 - p);
+          return clamp(p, 0.0, 1.0);
+        }
+
+        void main() {
+          gl_PointSize = 1.0;
+          vUv = uv;
+
+          vec2 from = fromTo.xy;
+          vec2 to = fromTo.zw;
+          vec2 transition = mix(from, to, easing(u_time/2000.0));
+          mat3 transformMatrix = mat3(
+            1, 0, 0, 
+            0, 1, 0, 
+            transition, 1
+          );
+          vec3 pos = transformMatrix * vec3(a_vertexPosition, 1.0);
+          gl_Position = vec4(pos, 1.0);
+        }
+      `;
+      const fragment = `
+        precision mediump float;
+
+        void main() {
+          gl_FragColor = vec4( 1.0, 0.0, 0.0, 1.0);
+        }
+      `;
+      import Animate from "../animation/lib/animate.js";
+
+      const canvas = document.querySelector("canvas");
+      const renderer = new GlRenderer(canvas);
+
+      const program = renderer.compileSync(fragment, vertex);
+      renderer.useProgram(program);
+      renderer.uniforms.fromTo = [-0.5, 0.0, 0.5, 0.0];
+
+      const update = (t) => {
+        renderer.uniforms.u_time = t;
+        requestAnimationFrame(update);
+      }
+
+      update(0);
+
+      // const animate = new Animate({
+      //   duration: 2000,
+      //   iterations: Infinity
+      // });
+
+      // animate.animate(
+      //   { el: renderer, start: -0.5, end: 0.5 },
+      //   ({ target, timing }) => {
+      //     const { el, start, end } = target;
+      //     const p = timing.p;
+      //     const left = start * (1 - p) + end * p;
+      //     el.uniforms.transition = [left, 0.0];
+      //   }
+      // );
+
+      renderer.setMeshData([
+        // 设置顶点数据
+        {
+          positions: [
+            [-0.25, -0.25],
+            [-0.25, 0.25],
+            [0.25, 0.25],
+            [0.25, -0.25],
+          ],
+          attributes: {
+            uv: [
+              // 纹理坐标
+              [0, 0],
+              [0, 1],
+              [1, 1],
+              [1, 0],
+            ],
+          },
+          // 利用 cells: [(0, 1, 2), (2, 0, 3)]，我们就能将这个矩形画布剖分成两个三角形，这两个三角形的顶点索引分别是 (0, 1, 2) 和 (2, 0, 3)
+          cells: [
+            // 顶点索引，每三个构成一个 三角形
+            [0, 1, 2],
+            [2, 0, 3],
+          ],
+        },
+      ]);
+
+      renderer.render();
+    </script>
+  </body>
+</html>

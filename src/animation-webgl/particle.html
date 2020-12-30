@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Color Easing</title>
+  </head>
+  <body>
+    <script src="../common/lib/gl-renderer.js"></script>
+    <canvas class="glslCanvas" width="500" height="500"></canvas>
+    <script type="module">
+      const vertex = `
+        attribute vec2 a_vertexPosition;
+        attribute vec2 uv;
+
+        varying vec2 vUv;
+
+        void main() {
+          gl_PointSize = 1.0;
+          vUv = uv;
+          gl_Position = vec4(a_vertexPosition, 1.0, 1.0);
+        }
+      `;
+      const fragment = `
+        precision highp float;
+
+        varying vec2 vUv;
+
+        uniform float u_time;
+
+        float random(vec2 st) {
+          return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+        }
+
+        highp float noise(in vec2 st) {
+          vec2 i = floor(st);
+          vec2 f = fract(st);
+          vec2 u = smoothstep(vec2(0.0), vec2(1.0), f);
+          // 分别得到 x 分量 (0, 0) => (0, 1) 和 (0, 1) => (1, 1) 的混合值
+          // 再 mix 得到 y 分量的混合值
+          float mx0 = mix(random(i + vec2(0.0, 0.0)), random(i + vec2(1.0, 0.0)), u.x);
+          float mx1 = mix(random(i + vec2(0.0, 1.0)), random(i + vec2(1.0, 1.0)), u.x);
+          return mix(mx0, mx1, u.y);
+        }
+
+        float sdf_circle(vec2 st, vec2 c, float r) {
+          return 1.0 - length(st - c) / r;
+        }
+
+        void main() {
+          vec2 st = vUv;
+          float rx = mix(-0.2, 0.2, noise(vec2(7881.32, 0) + random(st) + u_time));
+          float ry = mix(-0.2, 0.2, noise(vec2(0, 1433.59) + random(st) + u_time));
+          float dis = distance(st, vec2(0.5));
+          dis = pow((1.0 - dis), 2.0);
+          float d = sdf_circle(st + vec2(rx, ry), vec2(0.5), 0.2);
+          d = smoothstep(0.0, 0.1, d);
+          gl_FragColor = vec4(dis * d * vec3(1.0), 1.0);
+        }
+      `;
+      import Animate from "../animation/lib/animate.js";
+
+      const canvas = document.querySelector("canvas");
+      const renderer = new GlRenderer(canvas);
+
+      const program = renderer.compileSync(fragment, vertex);
+      renderer.useProgram(program);
+      renderer.uniforms.from = [1.0, 0.0, 0.0];
+      renderer.uniforms.to = [0.0, 1.0, 0.0];
+
+      const update = (t) => {
+        renderer.uniforms.u_time = t/1000;
+        requestAnimationFrame(update);
+      };
+
+      update(0);
+
+      renderer.setMeshData([
+        // 设置顶点数据
+        {
+          positions: [
+            [-1, -1],
+            [-1, 1],
+            [1, 1],
+            [1, -1],
+          ],
+          attributes: {
+            uv: [
+              // 纹理坐标
+              [0, 0],
+              [0, 1],
+              [1, 1],
+              [1, 0],
+            ],
+            color: [
+              [1, 0, 0, 1],
+              [1, 0, 0, 1],
+              [0, 0.5, 0, 1],
+              [0, 0.5, 0, 1],
+            ],
+          },
+          // 利用 cells: [(0, 1, 2), (2, 0, 3)]，我们就能将这个矩形画布剖分成两个三角形，这两个三角形的顶点索引分别是 (0, 1, 2) 和 (2, 0, 3)
+          cells: [
+            // 顶点索引，每三个构成一个 三角形
+            [0, 1, 2],
+            [2, 0, 3],
+          ],
+        },
+      ]);
+
+      renderer.render();
+    </script>
+  </body>
+</html>

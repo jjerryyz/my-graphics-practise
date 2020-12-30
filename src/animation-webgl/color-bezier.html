@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Color Easing</title>
+  </head>
+  <body>
+    <script src="../common/lib/gl-renderer.js"></script>
+    <canvas class="glslCanvas" width="500" height="500"></canvas>
+    <script type="module">
+      const vertex = `
+        attribute vec2 a_vertexPosition;
+        attribute vec2 uv;
+
+        varying vec2 vUv;
+
+        void main() {
+          gl_PointSize = 1.0;
+          vUv = uv;
+          gl_Position = vec4(a_vertexPosition, 1.0, 1.0);
+        }
+      `;
+      const fragment = `
+        precision mediump float;
+
+        varying vec2 vUv;
+
+        uniform vec3 from;
+        uniform vec3 to;
+
+
+        // http://www.flong.com/texts/code/shapers_bez/
+        // Helper functions:
+        float slope_from_t (float t, float A, float B, float C){
+          float dtdx = 1.0/(3.0*A*t*t + 2.0*B*t + C); 
+          return dtdx;
+        }
+
+        float x_from_t (float t, float A, float B, float C, float D){
+          float x = A*(t*t*t) + B*(t*t) + C*t + D;
+          return x;
+        }
+
+        float y_from_t (float t, float E, float F, float G, float H){
+          float y = E*(t*t*t) + F*(t*t) + G*t + H;
+          return y;
+        }
+
+        float cubic_bezier (float x, float a, float b, float c, float d){
+          float y0a = 0.00; // initial y
+          float x0a = 0.00; // initial x 
+          float y1a = b;    // 1st influence y   
+          float x1a = a;    // 1st influence x 
+          float y2a = d;    // 2nd influence y
+          float x2a = c;    // 2nd influence x
+          float y3a = 1.00; // final y 
+          float x3a = 1.00; // final x 
+
+          float A = x3a - 3.0 *x2a + 3.0 * x1a - x0a;
+          float B = 3.0 * x2a - 6.0 * x1a + 3.0 * x0a;
+          float C = 3.0 * x1a - 3.0 * x0a;   
+          float D = x0a;
+
+          float E = y3a - 3.0 * y2a + 3.0 * y1a - y0a;    
+          float F = 3.0 * y2a - 6.0 * y1a + 3.0 * y0a;             
+          float G = 3.0 * y1a - 3.0 * y0a;             
+          float H = y0a;
+
+          // Solve for t given x (using Newton-Raphelson), then solve for y given t.
+          // Assume for the first guess that t = x.
+          float currentt = x;
+          const int nRefinementIterations = 5;
+          for (int i=0; i < nRefinementIterations; i++){
+            float currentx = x_from_t(currentt, A,B,C,D); 
+            float currentslope = slope_from_t(currentt, A,B,C);
+            currentt -= (currentx - x)*(currentslope);
+            currentt = clamp(currentt, 0.0, 1.0);
+          } 
+
+          float y = y_from_t(currentt, E,F,G,H);
+          return y;
+        }
+
+        void main() {
+          float d = cubic_bezier(vUv.x, 1.0, 2.0, 2.0, 1.0);
+          gl_FragColor = vec4(mix(from, to, d), 1.0);
+        }
+      `;
+      import Animate from "../animation/lib/animate.js";
+
+      const canvas = document.querySelector("canvas");
+      const renderer = new GlRenderer(canvas);
+
+      const program = renderer.compileSync(fragment, vertex);
+      renderer.useProgram(program);
+      renderer.uniforms.from = [1.0, 0.0, 0.0];
+      renderer.uniforms.to = [0.0, 1.0, 0.0];
+
+      const update = (t) => {
+        renderer.uniforms.u_time = t;
+        requestAnimationFrame(update);
+      };
+
+      update(0);
+
+      renderer.setMeshData([
+        // 设置顶点数据
+        {
+          positions: [
+            [-0.5, -0.25],
+            [-0.5, 0.25],
+            [0.5, 0.25],
+            [0.5, -0.25],
+          ],
+          attributes: {
+            uv: [
+              // 纹理坐标
+              [0, 0],
+              [0, 1],
+              [1, 1],
+              [1, 0],
+            ],
+            color: [
+              [1, 0, 0, 1],
+              [1, 0, 0, 1],
+              [0, 0.5, 0, 1],
+              [0, 0.5, 0, 1],
+            ],
+          },
+          // 利用 cells: [(0, 1, 2), (2, 0, 3)]，我们就能将这个矩形画布剖分成两个三角形，这两个三角形的顶点索引分别是 (0, 1, 2) 和 (2, 0, 3)
+          cells: [
+            // 顶点索引，每三个构成一个 三角形
+            [0, 1, 2],
+            [2, 0, 3],
+          ],
+        },
+      ]);
+
+      renderer.render();
+    </script>
+  </body>
+</html>
