@@ -8,26 +8,6 @@
 <body>
   <script src="../common/lib/gl-renderer.js"></script>
   <canvas width="512" height="512"></canvas>
-  <div id="projection" style="display: flex;flex-direction: column;">
-    <label for="left">
-      <input type="range" name="left" id="left" min="-2" max="0" step="0.1">left
-    </label>
-    <label for="right">
-      <input type="range" name="right" id="right" min="0" max="2" step="0.1">right
-    </label>
-    <label for="bottom">
-      <input type="range" name="bottom" id="bottom" min="-3" max="-1" step="0.1">bottom
-    </label>
-    <label for="top">
-      <input type="range" name="top" id="top" min="1" max="3" step="0.1">top
-    </label>
-    <label for="near">
-      <input type="range" name="near" id="near" min="-3" max="-1" step="0.1">near
-    </label>
-    <label for="far">
-      <input type="range" name="far" id="far" min="1" max="3" step="0.1">far
-    </label>
-  </div>
   <script type="module">
     import {Mat4} from '../common/lib/math/Mat4.js';
     import {multiply} from '../common/lib/math/functions/Mat4Func.js';
@@ -138,25 +118,6 @@
     renderer.uniforms.lightColor = [1, 0, 0, 0.8];
 
     const geometry = cylinder(0.5, 1.0, 30, [0, 0, 1, 1], [0.5, 0.5, 0.5, 1]);
-   
-    // 正交投影
-    import {ortho} from '../common/lib/math/functions/Mat4Func.js';
-    function projection(left, right, bottom, top, near, far) {
-      return ortho([], left, right, bottom, top, near, far);
-    }
-    const projectionMatrix = projection(-2, 2, -2, 2, -2, 2); // 将视景体设置为 单位长度设为 2
-    renderer.uniforms.projectionMatrix = projectionMatrix; // 投影矩阵 
-    const projectionRanges = document.querySelectorAll('#projection input');
-    projectionRanges.forEach( element => {
-      element.addEventListener('change', e => {
-        const id = element.id;
-        const value = e.target.value;
-        const args = {left: -2, right: 2, bottom: -2, top: 2, near: -2, far: 2};
-        args[id] = value;
-        console.log(id, args[id]);
-        renderer.uniforms.projectionMatrix = projection(args.left, args.right, args.bottom, args.top, args.near, args.far);
-      })
-    })
 
 
     function fromRotation(rotationX, rotationY, rotationZ) {
@@ -223,7 +184,18 @@
       m.lookAt(eye, target, up).inverse();
       renderer.uniforms.viewMatrix = m;
     }
-    updateCamera([0.5, 0.0, 0.5]);
+
+    // 透视投影
+    import {perspective} from '../common/lib/math/functions/Mat4Func.js';
+
+    function projection(near = 0.1, far = 100, fov = 45, aspect = 1) {
+      return perspective([], fov * Math.PI / 180, aspect, near, far);
+    }
+
+    const projectionMatrix = projection();
+    renderer.uniforms.projectionMatrix = projectionMatrix;
+
+    updateCamera([2, 2, 3]);
 
     renderer.render();
   </script>
