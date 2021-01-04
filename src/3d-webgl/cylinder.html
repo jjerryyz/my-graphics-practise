@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cube</title>
+    <title>Cylinder</title>
   </head>
   <body>
     <script src="../common/lib/gl-renderer.js"></script>
@@ -35,16 +35,9 @@
           }
       `;
 
-      import { cube, fromRotation } from "./util.js";
+      import { cylinder, fromRotation } from "./util.js";
 
-      const geometry = cube(1.0, [
-        [1, 0, 0, 1],
-        [0, 0.5, 0, 1],
-        [0, 0, 1, 1],
-        [0, 0.3, 1, 1],
-        [0, 0.5, 1, 1],
-        [0, 0.4, 1, 1],
-      ]);
+      const geometry = cylinder(0.5, 1, 100);
 
       const canvas = document.querySelector("canvas");
       const renderer = new GlRenderer(canvas, {
