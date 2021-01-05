@@ -14,159 +14,60 @@
         Transform,
         Program,
         Geometry,
-        Sphere,
-        Box,
-        Cylinder,
-        Torus,
         Mesh,
         Orbit,
-        Texture,
-        Polyline,
         Color,
+        Texture,
         Vec3,
-        Quat,
+        Vec2,
       } from "../common/lib/ogl/index.mjs";
+      import {
+        Phong,
+        Material,
+        vertex as v,
+        fragment as f,
+      } from "../common/lib/phong.js";
 
-      import * as dat from "../common/lib/dat.gui.js";
-
-      class Phong {
-        constructor(ambientLight = [0.5, 0.5, 0.5]) {
-          this.ambientLight = ambientLight;
-          this.directionalLights = new Set();
-          this.pointLights = new Set();
-          this.spotLights = new Set();
-        }
-
-        addLight(light) {
-          const { position, direction, color, decay, angle } = light;
-          if (!position && !direction) throw new TypeError("invalid light");
-          light.color = color || [1, 1, 1];
-          if (!position) this.directionalLights.add(light);
-          else {
-            light.decay = decay || [0, 0, 1];
-            if (!angle) {
-              this.pointLights.add(light);
-            } else {
-              this.spotLights.add(light);
-            }
-          }
-        }
-
-        removeLight(light) {
-          if (this.directionalLights.has(light))
-            this.directionalLights.delete(light);
-          else if (this.pointLights.has(light)) this.pointLights.delete(light);
-          else if (this.spotLights.has(light)) this.spotLights.delete(light);
-        }
-
-        get uniforms() {
-          const MAX_LIGHT_COUNT = 16; // 最多每种光源设置16个
-          this._lightData = this._lightData || {};
-
-          const lightData = this._lightData;
-
-          lightData.directionalLightDirection = lightData.directionalLightDirection || {
-            value: new Float32Array(MAX_LIGHT_COUNT * 3),
-          };
-          lightData.directionalLightColor = lightData.directionalLightColor || {
-            value: new Float32Array(MAX_LIGHT_COUNT * 3),
-          };
-
-          lightData.pointLightPosition = lightData.pointLightPosition || {
-            value: new Float32Array(MAX_LIGHT_COUNT * 3),
-          };
-          lightData.pointLightColor = lightData.pointLightColor || {
-            value: new Float32Array(MAX_LIGHT_COUNT * 3),
-          };
-          lightData.pointLightDecay = lightData.pointLightDecay || {
-            value: new Float32Array(MAX_LIGHT_COUNT * 3),
-          };
-
-          lightData.spotLightDirection = lightData.spotLightDirection || {
-            value: new Float32Array(MAX_LIGHT_COUNT * 3),
-          };
-          lightData.spotLightPosition = lightData.spotLightPosition || {
-            value: new Float32Array(MAX_LIGHT_COUNT * 3),
-          };
-          lightData.spotLightColor = lightData.spotLightColor || {
-            value: new Float32Array(MAX_LIGHT_COUNT * 3),
-          };
-          lightData.spotLightDecay = lightData.spotLightDecay || {
-            value: new Float32Array(MAX_LIGHT_COUNT * 3),
-          };
-          lightData.spotLightAngle = lightData.spotLightAngle || {
-            value: new Float32Array(MAX_LIGHT_COUNT),
-          };
-
-          [...this.directionalLights].forEach((light, idx) => {
-            lightData.directionalLightDirection.value.set(
-              light.direction,
-              idx * 3
-            );
-            lightData.directionalLightColor.value.set(light.color, idx * 3);
-          });
-
-          [...this.pointLights].forEach((light, idx) => {
-            lightData.pointLightPosition.value.set(light.position, idx * 3);
-            lightData.pointLightColor.value.set(light.color, idx * 3);
-            lightData.pointLightDecay.value.set(light.decay, idx * 3);
-          });
-
-          [...this.spotLights].forEach((light, idx) => {
-            lightData.spotLightPosition.value.set(light.position, idx * 3);
-            lightData.spotLightColor.value.set(light.color, idx * 3);
-            lightData.spotLightDecay.value.set(light.decay, idx * 3);
-            lightData.spotLightDirection.value.set(light.direction, idx * 3);
-            lightData.spotLightAngle.value[idx] = light.angle;
-          });
-
-          return {
-            ambientLight: { value: this.ambientLight },
-            ...lightData,
-          };
-        }
-      }
-
-      class Material {
-        constructor(reflection, specularFactor = 0, shininess = 50) {
-          this.reflection = reflection;
-          this.specularFactor = specularFactor;
-          this.shininess = shininess;
-        }
-
-        get uniforms() {
-          return {
-            materialReflection: { value: this.reflection },
-            specularFactor: { value: this.specularFactor },
-            shininess: { value: this.shininess },
-          };
-        }
-      }
-
-      const vertex = /* glsl */ `
+      export const vertex = `#version 300 es
       precision highp float;
 
-      attribute vec3 position;
-      attribute vec3 normal;
+      in vec3 position;
+      in vec3 normal;
+      in vec2 uv;
+      in vec3 tang;
+      in vec3 bitang;
+
+      uniform mat4 modelMatrix;
       uniform mat4 modelViewMatrix;
       uniform mat4 viewMatrix;
       uniform mat4 projectionMatrix;
       uniform mat3 normalMatrix;
       uniform vec3 cameraPosition;
-      
-      varying vec3 vNormal;
-      varying vec3 vPos;
-      varying vec3 vCameraPos;
+
+      out vec3 vNormal;
+      out vec3 vPos;
+      out vec2 vUv;
+      out vec3 vCameraPos;
+      out mat3 vTBN;
 
       void main() {
         vec4 pos = modelViewMatrix * vec4(position, 1.0);
         vPos = pos.xyz;
+        vUv = uv;
         vCameraPos = (viewMatrix * vec4(cameraPosition, 1.0)).xyz;
         vNormal = normalize(normalMatrix * normal);
+
+        vec3 N = vNormal;
+        vec3 T = normalize(normalMatrix * tang);
+        vec3 B = normalize(normalMatrix * bitang);
+
+        vTBN = mat3(T, B, N);
+        
         gl_Position = projectionMatrix * pos;
       }
     `;
-      const fragment = /* glsl */ `
+
+      const fragment = `#version 300 es
       precision highp float;
 
       #define MAX_LIGHT_COUNT 16
@@ -188,9 +89,16 @@
       uniform float shininess;
       uniform float specularFactor;
 
-      varying vec3 vNormal;
-      varying vec3 vPos;
-      varying vec3 vCameraPos;
+      uniform sampler2D tMap;
+      uniform sampler2D tNormal;
+
+      in vec3 vNormal;
+      in vec3 vPos;
+      in vec2 vUv;
+      in vec3 vCameraPos;
+      in mat3 vTBN;
+
+      out vec4 FragColor;
 
       float getSpecular(vec3 dir, vec3 normal, vec3 eye) {
         vec3 reflectionLight = reflect(-dir, normal);
@@ -250,157 +158,197 @@
         return vec4(diffuse, specular);
       }
 
+      vec3 getNormal() {
+        vec3 n = texture(tNormal, vUv).rgb * 2.0 - 1.0;
+        n.xy *= 2.0;
+        return normalize(vTBN * n);
+      }
+
+      // vec3 getNormal() {
+      //   vec3 pos_dx = dFdx(vPos.xyz);
+      //   vec3 pos_dy = dFdy(vPos.xyz);
+      //   vec2 tex_dx = dFdx(vUv);
+      //   vec2 tex_dy = dFdy(vUv);
+
+      //   vec3 t = normalize(pos_dx * tex_dy.t - pos_dy * tex_dx.t);
+      //   vec3 b = normalize(-pos_dx * tex_dy.s + pos_dy * tex_dx.s);
+      //   mat3 tbn = mat3(t, b, normalize(vNormal));
+
+      //   vec3 n = texture(tNormal, vUv).rgb * 2.0 - 1.0;
+      //   return normalize(tbn * n);
+      // }
+
+      uniform float uTime;
+
       void main() {
         vec3 eyeDirection = normalize(vCameraPos - vPos);
-        vec4 phong = phongReflection(vPos, vNormal, eyeDirection);
+        vec3 normal = getNormal();
+        vec4 phong = phongReflection(vPos, normal, eyeDirection);
+        // vec4 phong = phongReflection(vPos, vNormal, eyeDirection);
 
-        // 合成颜色
-        gl_FragColor.rgb = phong.w + (phong.xyz + ambientLight) * materialReflection;
-        gl_FragColor.a = 1.0;
+        vec3 tex = texture(tMap, vUv).rgb;
+        vec3 light = normalize(vec3(sin(uTime), 1.0, cos(uTime)));
+        float shading = dot(normal, light) * 0.5;
+        
+        FragColor.rgb = tex + shading;
+        FragColor.a = 1.0;
       }
     `;
-
-      const phong = new Phong();
-      // 添加一个平行光
-      phong.addLight({
-        direction: [-1, 0, 0],
-      });
-      // 添加两个点光源
-      phong.addLight({
-        position: [-3, 3, 0],
-        color: [0.5, 1, 1],
-      });
-
-      phong.addLight({
-        position: [3, 3, 0],
-        color: [1, 0.5, 1],
-      });
-
-      const matrial1 = new Material(new Color("#0000ff"), 2.0);
-      const matrial2 = new Material(new Color("#ff00ff"), 2.0);
-      const matrial3 = new Material(new Color("#008000"), 2.0);
-      const matrial4 = new Material(new Color("#ff0000"), 2.0);
 
       const canvas = document.querySelector("canvas");
       const renderer = new Renderer({
         canvas,
         width: 512,
         height: 512,
+        antialias: true,
+        alpha: true,
       });
 
       const gl = renderer.gl;
       gl.clearColor(1, 1, 1, 1);
-
       const camera = new Camera(gl, { fov: 35 });
-      camera.position.set(0, 1, 7);
+      camera.position.set(2, 2, 2);
       camera.lookAt([0, 0, 0]);
-      window.camera = camera;
 
       const scene = new Transform();
 
-      const sphereGeometry = new Sphere(gl);
-      const cubeGeometry = new Box(gl);
-      const cylinderGeometry = new Cylinder(gl);
-      const torusGeometry = new Torus(gl);
-
-      const program1 = new Program(gl, {
-        vertex,
-        fragment,
-        uniforms: {
-          ...matrial1.uniforms,
-          ...phong.uniforms,
-        },
+      const phong = new Phong();
+      phong.addLight({
+        // color: [1, 0.5, 0.5],
+        direction: [0, -3, -3],
       });
-      const program2 = new Program(gl, {
-        vertex,
-        fragment,
-        uniforms: {
-          ...matrial2.uniforms,
-          ...phong.uniforms,
-        },
+      phong.addLight({
+        // color: [1, 0.5, 1],
+        direction: [0, 3, 3],
       });
-      const program3 = new Program(gl, {
-        vertex,
-        fragment,
-        uniforms: {
-          ...matrial3.uniforms,
-          ...phong.uniforms,
-        },
-      });
-      const program4 = new Program(gl, {
-        vertex,
-        fragment,
-        uniforms: {
-          ...matrial4.uniforms,
-          ...phong.uniforms,
-        },
-      });
+      const matrial = new Material(new Color("#808080"));
 
-      const controls = new Orbit(camera);
-
-      const torus = new Mesh(gl, {
-        geometry: torusGeometry,
-        program: program1,
-      });
-      torus.position.set(0, 1.3, 0);
-      torus.setParent(scene);
-
-      const sphere = new Mesh(gl, {
-        geometry: sphereGeometry,
-        program: program2,
-      });
-      sphere.position.set(1.3, 0, 0);
-      sphere.setParent(scene);
-
-      const cube = new Mesh(gl, { geometry: cubeGeometry, program: program3 });
-      cube.position.set(0, -1.3, 0);
-      cube.setParent(scene);
-
-      const cylinder = new Mesh(gl, {
-        geometry: cylinderGeometry,
-        program: program4,
-      });
-      cylinder.position.set(-1.3, 0, 0);
-      cylinder.setParent(scene);
-
-      window.program = program1;
-
-      // renderer.render({ scene, camera });
-      requestAnimationFrame(update);
-      function update() {
-        requestAnimationFrame(update);
-        controls.update();
-        renderer.render({ scene, camera });
+      function loadTexture(src) {
+        const texture = new Texture(gl);
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            texture.image = img;
+            resolve(texture);
+          };
+          img.src = src;
+        });
       }
 
-      const gui = new dat.GUI();
-      const palette = {
-        light: "#FFFFFF",
-        reflection1: "#0000FF",
-        reflection2: "#FF00FF",
-        reflection3: "#008000",
-        reflection4: "#FF0000",
-      };
+      function createTB(geometry) {
+        const { position, index, uv } = geometry.attributes;
+        if (!uv) throw new Error("NO uv.");
+        function getTBNTriangle(p1, p2, p3, uv1, uv2, uv3) {
+          const edge1 = new Vec3().sub(p2, p1);
+          const edge2 = new Vec3().sub(p3, p1);
+          const deltaUV1 = new Vec2().sub(uv2, uv1);
+          const deltaUV2 = new Vec2().sub(uv3, uv1);
 
-      gui.addColor(palette, "light").onChange((val) => {
-        const color = new Color(val);
-        program1.uniforms.ambientLight.value = color;
-        program2.uniforms.ambientLight.value = color;
-        program3.uniforms.ambientLight.value = color;
-        program4.uniforms.ambientLight.value = color;
-      });
-      gui.addColor(palette, "reflection1").onChange((val) => {
-        program1.uniforms.materialReflection.value = new Color(val);
-      });
-      gui.addColor(palette, "reflection2").onChange((val) => {
-        program2.uniforms.materialReflection.value = new Color(val);
-      });
-      gui.addColor(palette, "reflection3").onChange((val) => {
-        program3.uniforms.materialReflection.value = new Color(val);
-      });
-      gui.addColor(palette, "reflection4").onChange((val) => {
-        program4.uniforms.materialReflection.value = new Color(val);
-      });
+          const tang = new Vec3();
+          const bitang = new Vec3();
+
+          const f = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+          tang.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+          tang.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+          tang.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+          tang.normalize();
+
+          bitang.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+          bitang.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+          bitang.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+
+          bitang.normalize();
+
+          return { tang, bitang };
+        }
+
+        const size = position.size;
+        if (size < 3) throw new Error("Error dimension.");
+
+        const len = position.data.length / size;
+        const tang = new Float32Array(len * 3);
+        const bitang = new Float32Array(len * 3);
+
+        const ilen = index ? index.data.length : len;
+
+        for (let i = 0; i < ilen; i += 3) {
+          const i1 = index ? index.data[i] : i;
+          const i2 = index ? index.data[i + 1] : i + 1;
+          const i3 = index ? index.data[i + 2] : i + 2;
+
+          const p1 = [
+            position.data[i1 * size],
+            position.data[i1 * size + 1],
+            position.data[i1 * size + 2],
+          ];
+          const p2 = [
+            position.data[i2 * size],
+            position.data[i2 * size + 1],
+            position.data[i2 * size + 2],
+          ];
+          const p3 = [
+            position.data[i3 * size],
+            position.data[i3 * size + 1],
+            position.data[i3 * size + 2],
+          ];
+
+          const u1 = [uv.data[i1 * 2], uv.data[i1 * 2 + 1]];
+          const u2 = [uv.data[i2 * 2], uv.data[i2 * 2 + 1]];
+          const u3 = [uv.data[i3 * 2], uv.data[i3 * 2 + 1]];
+
+          const { tang: t, bitang: b } = getTBNTriangle(p1, p2, p3, u1, u2, u3);
+          tang.set(t, i1 * 3);
+          tang.set(t, i2 * 3);
+          tang.set(t, i3 * 3);
+          bitang.set(b, i1 * 3);
+          bitang.set(b, i2 * 3);
+          bitang.set(b, i3 * 3);
+        }
+        geometry.addAttribute("tang", { data: tang, size: 3 });
+        geometry.addAttribute("bitang", { data: bitang, size: 3 });
+        return geometry;
+      }
+
+      (async function () {
+        const data = await (await fetch("../assets/rounded-cube.json")).json();
+        const normalMap = await loadTexture("../assets/rock_normal.jpg");
+        const texture = await loadTexture("../assets/rock.jpg");
+
+        const program = new Program(gl, {
+          vertex,
+          fragment,
+          uniforms: {
+            ...phong.uniforms,
+            ...matrial.uniforms,
+            uTime: { value: 0 },
+            tMap: { value: texture },
+            tNormal: { value: normalMap },
+          },
+        });
+
+        const geometry = new Geometry(gl, {
+          position: { size: 3, data: new Float32Array(data.position) },
+          uv: { size: 2, data: new Float32Array(data.uv) },
+          normal: { size: 3, data: new Float32Array(data.normal) },
+        });
+        createTB(geometry);
+
+        const cube = new Mesh(gl, { geometry, program });
+        cube.setParent(scene);
+        cube.rotation.x = -Math.PI / 2;
+        // renderer.render({scene, camera});
+
+        const controls = new Orbit(camera);
+        requestAnimationFrame(update);
+        function update(t) {
+          requestAnimationFrame(update);
+          controls.update();
+          program.uniforms.uTime.value = t * 0.001;
+          renderer.render({ scene, camera });
+        }
+      })();
     </script>
   </body>
 </html>
