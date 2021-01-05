@@ -125,11 +125,9 @@
       const ambientLight = { value: [0.5, 0.5, 0.5] };
 
       const directional = {
-        spotLightPosition: { value: [3, 3, 0] },
-        spotLightColor: { value: [1, 1, 1] },
-        spotLightDecayFactor: { value: [0.05, 0, 1] },
-        spotLightDirection: { value: [-1, -1, 0] },
-        spotLightAngle: { value: Math.PI / 12 },
+        pointLightPosition: {value: [3, 1, 2]},
+        pointLightColor: {value: [0.5, 0.5, 0.5]},
+        pointLightDecayFactor: {value: [0, 0, 1]},
       };
 
       const program1 = new Program(gl, {
