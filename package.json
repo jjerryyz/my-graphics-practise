@@ -31,6 +31,8 @@
     "serve": "^11.3.2",
     "ts-loader": "^9.1.2",
     "typescript": "^4.2.4",
+    "sprite-extend-3d": "^0.14.6",
+    "spritejs": "^3.7.28",
     "uglifyjs-webpack-plugin": "^2.2.0",
     "webpack": "^5.11.0",
     "webpack-dev-server": "^3.11.0"
