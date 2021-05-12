@@ -7,7 +7,7 @@ module.exports = (env) => {
   console.log('starting demo: ', demo)
   return {
     mode: 'development',
-    entry: { index: `./src/${demo}/index.js` },
+    entry: { index: `./src/${demo}/index.ts` },
     devtool: 'inline-source-map',
     devServer: {
       contentBase: path.resolve(__dirname, `../dist/${demo}/`),
@@ -20,12 +20,9 @@ module.exports = (env) => {
     module: {
       rules: [
         {
-          test: /\.js$/,
-          loader: 'babel-loader',
+          test: /\.tsx?$/,
+          use: 'ts-loader',
           exclude: /node_modules/,
-          options: {
-            presets: [['@babel/preset-env', { targets: 'defaults' }]],
-          },
         },
         {
           test: /\.glsl$/,
@@ -33,10 +30,16 @@ module.exports = (env) => {
         },
       ],
     },
+    resolve: {
+      extensions: ['.tsx', '.ts', '.js'],
+      alias: {
+        '@common': path.resolve(__dirname, '../src/common'),
+      },
+    },
     plugins: [
       new CleanWebpackPlugin(),
       new CopyPlugin({
-        patterns: [`src/${demo}/index.html`],
+        patterns: [`./src/${demo}/index.html`],
       }),
     ],
   }
