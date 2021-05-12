@@ -1,5 +1,5 @@
 attribute vec2 position; // 声明一个 vec2 类型的变量 position
-varying vec3 color; // 定义 color，作用是向 片元着色器传递
+varying vec3 color;      // 定义 color，作用是向 片元着色器传递
 
 void main() {
   gl_PointSize = 1.0;

@@ -6,8 +6,8 @@
   "private": true,
   "scripts": {
     "serve": "serve src",
-    "dev": "cross-env NODE_ENV=development webpack serve",
-    "build": "cross-env NODE_ENV=production webpack --progress"
+    "dev": "cross-env NODE_ENV=development webpack serve --config build/webpack.config.js ",
+    "build": "cross-env NODE_ENV=production webpack --config build/webpack.config.js  --progress"
   },
   "dependencies": {
     "@babel/core": "^7.12.10",
